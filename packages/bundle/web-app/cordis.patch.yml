@@ -331,6 +331,12 @@
     - id: ui-brand-official
       name: '@deepseek-ai/dsh-client-ui-brand-official'
 
+    # Distribution occupants for the same slots. Only one of the two registers:
+    # the official plugin requires the `official` build profile and this one
+    # refuses it, so a build presents DeepSeek or Nuro, never both.
+    - id: ui-brand-nuro
+      name: '@deepseek-ai/dsh-client-ui-brand-nuro'
+
     - id: ui-attachment
       name: '@deepseek-ai/dsh-client-ui-attachment'
 
