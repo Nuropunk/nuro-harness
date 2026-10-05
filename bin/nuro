@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Nuro launcher — boots this checkout as the "Nuro" application.
+#
+# Nuro is a fork of DeepSeek Harness (MIT). This script supplies the branding
+# and data-home environment the fork leaves configurable, so the upstream
+# source stays unmodified and the fork stays rebasable.
+#
+# Usage:
+#   bin/nuro                  launch the Nuro desktop app
+#   bin/nuro web              serve the Nuro web UI
+#   bin/nuro exec <args...>   run the dsh CLI inside this checkout
+#   bin/nuro home             print the resolved Nuro data home
+#
+# Environment (set here, so an inherited value cannot redirect the app):
+#   NURO_HOME           data home for Nuro            (default: ~/.nuro-dsh)
+#   DSH_CLIENT_TITLE    web/desktop document title    (default: Nuro)
+#   DSH_DESKTOP_PRODUCT_NAME  installed app name      (default: Nuro)
+#   DSH_DESKTOP_APP_ID  Electron application id       (default: com.nuro.harness)
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
+
+DEFAULT_NURO_HOME="$HOME/.nuro-dsh"
+
+# DSH_HOME is owned outright: a parent dsh process exports its own home to the
+# agents it runs, so inheriting that value would silently point Nuro at another
+# installation's data. NURO_HOME is the caller-facing override.
+export DSH_HOME="${NURO_HOME:-$DEFAULT_NURO_HOME}"
+export DSH_CLIENT_TITLE="${DSH_CLIENT_TITLE:-Nuro}"
+export DSH_DESKTOP_PRODUCT_NAME="${DSH_DESKTOP_PRODUCT_NAME:-Nuro}"
+export DSH_DESKTOP_APP_ID="${DSH_DESKTOP_APP_ID:-com.nuro.harness}"
+
+mode="${1:-desktop}"
+if [ $# -gt 0 ]; then shift; fi
+
+run_dsh() {
+  exec node --import tsx/esm apps/cli/src/bin.ts "$@"
+}
+
+case "$mode" in
+  desktop)
+    exec pnpm --filter @deepseek-ai/dsh-desktop run start -- "$@"
+    ;;
+  dev-desktop)
+    exec pnpm --filter @deepseek-ai/dsh-desktop run dev -- "$@"
+    ;;
+  web)
+    # Address the profile directly: the `web` subcommand is shorthand for
+    # `--profile web`, and selecting a profile twice is a usage error.
+    run_dsh --profile "${NURO_WEB_PROFILE:-nuro}" "$@"
+    ;;
+  exec)
+    run_dsh "$@"
+    ;;
+  home)
+    printf '%s\n' "$DSH_HOME"
+    ;;
+  *)
+    printf 'nuro: unknown mode %q\n\n' "$mode" >&2
+    sed -n '2,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' >&2
+    exit 2
+    ;;
+esac

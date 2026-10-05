@@ -190,6 +190,9 @@ const GROUP_AT = /^\{\{([^{}]*)\}\}/
 /** Reserved {@link Config.toolOrder} marker for unlisted tools. */
 export const TOOL_ORDER_REST = '<unlisted-tools>'
 
+/** {@link Config.identity} default: the shipped harness identity sentence. */
+export const DEFAULT_HARNESS_IDENTITY = 'You are an AI agent powered by DeepSeek Harness.'
+
 /**
  * Validate duplicate names and the required {@link TOOL_ORDER_REST} marker.
  * Registered names are checked later because plugins have not loaded yet.
@@ -245,7 +248,13 @@ function compareToolNames(a: ToolSchema, b: ToolSchema): number {
 
 /** Plugin config: the deployment-authored fragment of the system prompt (see {@link Config.personaPrefix} for its contract). */
 export interface Config {
-  /** Include the fixed DeepSeek Harness identity before the deployment persona (default true). */
+  /**
+   * Harness identity sentence in the `harness:identity` section, which opens every
+   * assembly. A distribution that ships under its own name sets this to its own
+   * sentence; see {@link DEFAULT_HARNESS_IDENTITY}.
+   */
+  identity?: string
+  /** Include the harness identity before the deployment persona (default true). */
   includeHarnessIdentity?: boolean
   /** Include dynamic runtime-context snapshots in model history (default true). */
   includeRuntimeContext?: boolean
@@ -404,6 +413,7 @@ class PromptLayer implements ScopeLayer {
 /** Registry service for the prompt inputs assembled before each model step. */
 export class SystemPrompt extends Service {
   static Config: z<Config> = z.object({
+    identity: z.string().default(DEFAULT_HARNESS_IDENTITY),
     includeHarnessIdentity: z.boolean().default(true),
     includeRuntimeContext: z.boolean().default(true),
     personaPrefix: z.string().default(''),
@@ -426,7 +436,7 @@ export class SystemPrompt extends Service {
       this.section({
         name: 'harness:identity',
         order: this.getSectionOrder('HARNESS_IDENTITY'),
-        text: 'You are an AI agent powered by DeepSeek Harness.',
+        text: config.identity ?? DEFAULT_HARNESS_IDENTITY,
       })
     }
     this.section({
