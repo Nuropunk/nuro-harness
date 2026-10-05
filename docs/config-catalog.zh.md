@@ -2864,7 +2864,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-skill-filesystem`
 
 - `inject`: `skills`
-- `source`: [`packages/skill/skill-filesystem/src/index.ts:49`](../packages/skill/skill-filesystem/src/index.ts)
+- `source`: [`packages/skill/skill-filesystem/src/index.ts:55`](../packages/skill/skill-filesystem/src/index.ts)
 
 ```ts config-catalog
 /** Local filesystem skill provider configuration. */
@@ -2877,6 +2877,8 @@ export interface Config {
   dshHome?: string
   /** Shared agent config root. Defaults to `$DSH_AGENTS_HOME` or `~/.agents`. */
   agentsHome?: string
+  /** Claude Code config root. Defaults to `$DSH_CLAUDE_HOME` or `~/.claude`. */
+  claudeHome?: string
   /** Additional skill roots scanned after project roots and before user roots. */
   customSkillDirs?: string[]
   /** Whether host-local skill roots are watched for catalog changes. */

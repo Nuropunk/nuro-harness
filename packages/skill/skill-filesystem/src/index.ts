@@ -34,10 +34,16 @@ import {
 } from '@deepseek-ai/dsh-skill'
 
 const PROJECT_DSH_RANK = 100
+const PROJECT_CLAUDE_RANK = 150
 const PROJECT_AGENTS_RANK = 200
 const CUSTOM_RANK = 300
 const USER_DSH_RANK = 400
 const USER_AGENTS_RANK = 500
+// Below `bundled` (600): a bundled skill is part of the deployment, so it
+// outranks a skill the user happened to leave in the cross-tool directory.
+// Both Claude roots exist because skills written for Claude Code are otherwise
+// invisible here, and Cursor reads the same paths.
+const USER_CLAUDE_RANK = 550
 const DEFAULT_WATCH_STABILITY_THRESHOLD_MS = 200
 const DEFAULT_WATCH_POLL_INTERVAL_MS = 100
 const DEFAULT_WATCH_MAX_PROJECTS = 128
@@ -55,6 +61,8 @@ export interface Config {
   dshHome?: string
   /** Shared agent config root. Defaults to `$DSH_AGENTS_HOME` or `~/.agents`. */
   agentsHome?: string
+  /** Claude Code config root. Defaults to `$DSH_CLAUDE_HOME` or `~/.claude`. */
+  claudeHome?: string
   /** Additional skill roots scanned after project roots and before user roots. */
   customSkillDirs?: string[]
   /** Whether host-local skill roots are watched for catalog changes. */
@@ -78,6 +86,7 @@ export const Config: Schema<Config> = z.object({
   includeDefaultRoots: z.boolean().default(true),
   dshHome: z.string(),
   agentsHome: z.string(),
+  claudeHome: z.string(),
   customSkillDirs: z.array(z.string()).default([]),
   watch: z.boolean().default(true),
   watchUsePolling: z.boolean().default(false),
@@ -152,6 +161,7 @@ export class FileSystemSkillProvider implements SkillProvider {
   private readonly includeDefaultRoots: boolean
   private readonly dshHome: string
   private readonly agentsHome: string
+  private readonly claudeHome: string
   private readonly customSkillDirs: string[]
   private readonly watchManager: SkillWatchManager
   private readonly bundledSkillDir: string | undefined
@@ -166,6 +176,7 @@ export class FileSystemSkillProvider implements SkillProvider {
     this.includeDefaultRoots = config.includeDefaultRoots ?? true
     this.dshHome = resolveDshHome(config.dshHome)
     this.agentsHome = resolve(config.agentsHome ?? process.env.DSH_AGENTS_HOME ?? join(homedir(), '.agents'))
+    this.claudeHome = resolve(config.claudeHome ?? process.env.DSH_CLAUDE_HOME ?? join(homedir(), '.claude'))
     this.customSkillDirs = (config.customSkillDirs ?? []).map(root => resolve(root))
     this.watchManager = new SkillWatchManager(ctx, control.invalidate, resolveWatchConfig(config))
     control.signal.addEventListener('abort', () => { void this.dispose() }, { once: true })
@@ -248,6 +259,7 @@ export class FileSystemSkillProvider implements SkillProvider {
       const projectRoot = await findProjectRoot(resolve(cwd), optionalFileSystem(this.ctx))
       roots.push(
         { path: join(projectRoot, '.dsh/skills'), source: 'project-dsh', rank: PROJECT_DSH_RANK, projectRoot },
+        { path: join(projectRoot, '.claude/skills'), source: 'project-claude', rank: PROJECT_CLAUDE_RANK, projectRoot },
         { path: join(projectRoot, '.agents/skills'), source: 'project-agents', rank: PROJECT_AGENTS_RANK, projectRoot },
       )
     }
@@ -256,6 +268,7 @@ export class FileSystemSkillProvider implements SkillProvider {
       roots.push(
         { path: join(this.dshHome, 'skills'), source: 'user-dsh', rank: USER_DSH_RANK, skipSystem: true },
         { path: join(this.agentsHome, 'skills'), source: 'user-agents', rank: USER_AGENTS_RANK },
+        { path: join(this.claudeHome, 'skills'), source: 'user-claude', rank: USER_CLAUDE_RANK },
       )
     }
     if (this.bundledSkillDir !== undefined) {

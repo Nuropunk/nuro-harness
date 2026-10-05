@@ -157,6 +157,7 @@ async function setupLocal(home: string, config: Partial<SkillFileSystem.Config> 
   await ctx.plugin(SkillFileSystem, {
     dshHome: join(home, '.dsh'),
     agentsHome: join(home, '.agents'),
+    claudeHome: join(home, '.claude'),
     watch: false,
     ...config,
   })
@@ -439,7 +440,7 @@ describe('FileSystemSkillProvider', () => {
         }
       })
     }
-    const fiber = ctx.plugin(SkillFileSystem, { dshHome: join(home, '.dsh'), agentsHome: join(home, '.agents'), watch: false })
+    const fiber = ctx.plugin(SkillFileSystem, { dshHome: join(home, '.dsh'), agentsHome: join(home, '.agents'), claudeHome: join(home, '.claude'), watch: false })
     await fiber
 
     try {
@@ -493,7 +494,7 @@ describe('FileSystemSkillProvider', () => {
       size: 0,
     })
     await ctx.plugin(SkillRegistry)
-    await ctx.plugin(SkillFileSystem, { dshHome: join(home, '.dsh'), agentsHome: join(home, '.agents'), watch: false })
+    await ctx.plugin(SkillFileSystem, { dshHome: join(home, '.dsh'), agentsHome: join(home, '.agents'), claudeHome: join(home, '.claude'), watch: false })
 
     expect((await ctx.skills.list({ cwd: nestedCwd })).map(skill => [skill.name, skill.source])).toEqual([
       ['backend-root', 'project-agents'],
@@ -512,6 +513,7 @@ describe('FileSystemSkillProvider', () => {
     await bundledCtx.plugin(SkillFileSystem, {
       dshHome: join(home, '.dsh'),
       agentsHome: join(home, '.agents'),
+      claudeHome: join(home, '.claude'),
       bundledSkillDir: bundled,
     })
     expect((await bundledCtx.skills.get('bundled-host'))?.source).toBe('bundled')
@@ -528,6 +530,7 @@ describe('FileSystemSkillProvider', () => {
     await ctx.plugin(SkillFileSystem, {
       dshHome: join(home, '.dsh'),
       agentsHome: join(home, '.agents'),
+      claudeHome: join(home, '.claude'),
       watch: false,
     })
 
@@ -564,6 +567,7 @@ describe('FileSystemSkillProvider', () => {
     await ctx.plugin(SkillFileSystem, {
       dshHome: join(home, '.dsh'),
       agentsHome: join(home, '.agents'),
+      claudeHome: join(home, '.claude'),
       watch: false,
     })
     const invalidate = (): void => {
@@ -611,7 +615,7 @@ describe('FileSystemSkillProvider', () => {
     await ctx.plugin(TestFileSystem)
     const fs = ctx.fs as TestFileSystem
     await ctx.plugin(SkillRegistry)
-    await ctx.plugin(SkillFileSystem, { dshHome: join(home, '.dsh'), agentsHome: join(home, '.agents'), watch: false })
+    await ctx.plugin(SkillFileSystem, { dshHome: join(home, '.dsh'), agentsHome: join(home, '.agents'), claudeHome: join(home, '.claude'), watch: false })
     expect((await ctx.skills.list()).map(skill => skill.name)).toEqual(['abortable-skill'])
 
     fs.statSignals = []
@@ -646,6 +650,7 @@ describe('FileSystemSkillProvider', () => {
     const fiber = await ctx.plugin(SkillFileSystem, {
       dshHome: join(home, '.dsh'),
       agentsHome: join(home, '.agents'),
+      claudeHome: join(home, '.claude'),
       watch: true,
       watchStabilityThresholdMs: 20,
       watchPollIntervalMs: 10,
@@ -754,6 +759,7 @@ describe('FileSystemSkillProvider', () => {
     const fiber = await ctx.plugin(SkillFileSystem, {
       dshHome: join(home, '.dsh'),
       agentsHome: join(home, '.agents'),
+      claudeHome: join(home, '.claude'),
       customSkillDirs: [join(first, '.agents/skills')],
       watch: true,
       watchMaxProjects: 1,
@@ -776,6 +782,7 @@ describe('FileSystemSkillProvider', () => {
     await noWatch.plugin(SkillFileSystem, {
       dshHome: join(home, '.dsh'),
       agentsHome: join(home, '.agents'),
+      claudeHome: join(home, '.claude'),
       watch: false,
       watchMaxProjects: 1,
     })
@@ -795,6 +802,7 @@ describe('FileSystemSkillProvider', () => {
       provider = new SkillFileSystem.FileSystemSkillProvider(ctx, control, {
         dshHome: join(home, '.dsh'),
         agentsHome: join(home, '.agents'),
+        claudeHome: join(home, '.claude'),
         customSkillDirs: [nonDirectoryRoot],
         watch: true,
         watchStabilityThresholdMs: 20,
@@ -828,6 +836,7 @@ describe('FileSystemSkillProvider', () => {
     const fiber = await ctx.plugin(SkillFileSystem, {
       dshHome: join(home, '.dsh'),
       agentsHome: join(home, '.agents'),
+      claudeHome: join(home, '.claude'),
       watch: true,
       watchFollowSymlinks: true,
       watchStabilityThresholdMs: 20,
@@ -858,11 +867,13 @@ describe('FileSystemSkillProvider', () => {
   it('uses default home root resolution without exposing builtin skills', async () => {
     const previousDshHome = process.env.DSH_HOME
     const previousAgentsHome = process.env.DSH_AGENTS_HOME
+    const previousClaudeHome = process.env.DSH_CLAUDE_HOME
     const previousBundledSkillDir = process.env.DSH_BUNDLED_SKILL_DIR
     const envHome = await tempDir('skill-env-home')
     try {
       process.env.DSH_HOME = join(envHome, '.dsh')
       process.env.DSH_AGENTS_HOME = join(envHome, '.agents')
+      process.env.DSH_CLAUDE_HOME = join(envHome, '.claude')
       const bundled = join(envHome, 'bundled-skills')
       process.env.DSH_BUNDLED_SKILL_DIR = bundled
       await writeSkill(join(envHome, '.dsh/skills'), 'env-skill', 'Env skill')
@@ -891,6 +902,7 @@ describe('FileSystemSkillProvider', () => {
       process.env.DSH_HOME = join(envHome, 'empty-dsh')
       delete process.env.DSH_BUNDLED_SKILL_DIR
       process.env.DSH_AGENTS_HOME = join(envHome, 'empty-agents')
+      process.env.DSH_CLAUDE_HOME = join(envHome, 'empty-claude')
       const empty = new Context()
       await empty.plugin(SkillRegistry)
       SkillFileSystem.apply(empty, { watch: false })
@@ -911,6 +923,11 @@ describe('FileSystemSkillProvider', () => {
         delete process.env.DSH_AGENTS_HOME
       } else {
         process.env.DSH_AGENTS_HOME = previousAgentsHome
+      }
+      if (previousClaudeHome === undefined) {
+        delete process.env.DSH_CLAUDE_HOME
+      } else {
+        process.env.DSH_CLAUDE_HOME = previousClaudeHome
       }
       if (previousBundledSkillDir === undefined) {
         delete process.env.DSH_BUNDLED_SKILL_DIR
