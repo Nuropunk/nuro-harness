@@ -12,7 +12,12 @@ import type { PromptContextOrderName, PromptSectionOrderName } from '@deepseek-a
  * their own sections; the built-ins' behavior is pinned by its own describe.
  */
 const BUILT_IN = ['harness:identity', 'deployment:persona-prefix', 'deployment:persona-suffix']
-const IDENTITY = DEFAULT_HARNESS_IDENTITY
+/**
+ * The shipped identity sentence, written as a literal on purpose: this is the
+ * pin that fails if the default is edited. Comparing against
+ * {@link DEFAULT_HARNESS_IDENTITY} would move with the constant and pin nothing.
+ */
+const IDENTITY = 'You are an AI agent powered by DeepSeek Harness.'
 const SECTION_ORDER_NAMES = [
   'HARNESS_IDENTITY', 'DEPLOYMENT_PERSONA_PREFIX',
   'PLAN_POLICY', 'TEAM_POLICY', 'PTC_ONLY', 'FILE_REFERENCE', 'TOOL_BASH',
@@ -124,8 +129,12 @@ describe('SystemPrompt', () => {
 
     it('lets a distribution replace the harness identity sentence', async () => {
       const ctx = new Context()
-      await ctx.plugin(SystemPrompt, { identity: 'You are Neuro.' })
-      expect(renderPrompt(await ctx.systemPrompt.assemble())).toBe('You are Neuro.')
+      await ctx.plugin(SystemPrompt, { identity: 'You are Nuro.' })
+      expect(renderPrompt(await ctx.systemPrompt.assemble())).toBe('You are Nuro.')
+    })
+
+    it('pins the exported shipped identity as a literal, independent of the constant', async () => {
+      expect(DEFAULT_HARNESS_IDENTITY).toBe('You are an AI agent powered by DeepSeek Harness.')
     })
 
     it('opens with the shipped harness identity by default', async () => {

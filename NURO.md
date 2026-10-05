@@ -24,18 +24,24 @@ pnpm run build
 
 ## How the branding works
 
-Every user-visible name is a **configuration seam owned by the launcher**, not a hardcoded edit. That keeps the fork small and rebasable against upstream, and it follows the upstream rule that deployment-varying choices belong in validated config rather than in plugin source.
+Nuro's own name reaches the product through **configuration seams owned by the launcher**, not through hardcoded edits. That keeps the fork small and rebasable against upstream, and it follows the upstream rule that deployment-varying choices belong in validated config rather than in plugin source.
 
 | Surface | Mechanism | Default |
 |---|---|---|
 | Model-facing self-identity | `system-prompt` row's `identity` config | `You are an AI agent powered by DeepSeek Harness.` |
-| Web/desktop document title | `DSH_CLIENT_TITLE` (build-time) | `DSH Local Build` |
+| Web/desktop document title | `DSH_CLIENT_TITLE` (build-time) | `DSH Local Build` for a local build; release builds require `DeepSeek Harness` |
 | Installed app name | `DSH_DESKTOP_PRODUCT_NAME` | `DeepSeek Harness` |
 | Electron application id | `DSH_DESKTOP_APP_ID` | required by the packaging environment |
 | Artifact file names | derived slug of the product name | `deepseek-harness` |
 | Data home | `NURO_HOME` / `DSH_HOME` | `~/.nuro-dsh` |
 
-`bin/nuro` sets the four branding variables and owns `DSH_HOME` outright. It sets `DSH_HOME` rather than inheriting it because a parent `dsh` process exports its own home to the agents it runs; inheriting that value would silently point Nuro at another installation's data.
+These seams cover the app name, the document title, the packaged identity, artifact names, and the model-facing opener. They are **not** a complete rebrand of every string, and three gaps are deliberate and known:
+
+- The client's onboarding copy reads the product name from the typed locale dictionary (`packages/client/ui-settings-account/src/client/locales/onboarding.ts`, key `onboardingBrand`), which still says `DeepSeek Harness`. Upstream's own guidance is that a deployment with another identity supplies a replacement brand package alongside `packages/client/ui-brand-official`; that package does not exist here yet.
+- `apps/desktop/scripts/electron-builder-config.mjs` still hardcodes the macOS `NSMicrophoneUsageDescription` text, which `DSH_DESKTOP_PRODUCT_NAME` does not rewrite.
+- Roughly 195 `DeepSeek Harness` occurrences remain across shipped production files (package descriptions, prompt text, window titles). None of them are Nuro strings, and under the brand guidelines they are accurate: the harness underneath is DeepSeek Harness.
+
+`bin/nuro` sets the four branding variables and owns `DSH_HOME` outright. It sets `DSH_HOME` rather than inheriting it because a parent `dsh` process exports its own home to the agents it runs; inheriting that value would silently point Nuro at another installation's data. The same applies to `ELECTRON_RUN_AS_NODE`, which a parent `dsh` process also exports: an inherited value makes Electron start as plain Node and refuse to open a window, so both desktop modes clear it and `bin/nuro home` is the way to inspect the resolved home.
 
 Nuro's own identity text lives in the profile at `$DSH_HOME/profiles/desktop/cordis.patch.yml` (and `profiles/nuro/`), applied as the last patch layer over the shipped bundles.
 
@@ -67,7 +73,11 @@ failed to observe session "<id>": subagent/descriptor 0 uses unsupported descrip
 source v0 artifact remains unchanged
 ```
 
-The failure is **safe**: the migration refuses and leaves the source artifact untouched, so no session is corrupted or lost. But sessions containing a subagent descriptor at v2 cannot be opened in Nuro until a v2→v3 upgrader exists. Measured on one real 0.1.1 store: 121 of 256 sessions contained such a descriptor; the other 135 migrated cleanly.
+The failure is **safe**: the refusal happens while the stored log is decoded, before any publication, and publication only ever writes the current-format path while re-checking the source. So the source artifact is not corrupted or lost. But sessions containing a subagent descriptor at v2 cannot be opened in Nuro until a v2→v3 upgrader exists.
+
+The measurement behind this section comes from one 0.1.1 session store on the author's machine and is recorded as an observation rather than a reproducible fixture: it is not part of this checkout, so it cannot be re-derived from the repository. On that store, 121 of 256 sessions contained a descriptor at v2 and the other 135 migrated cleanly. Treat the ratio as indicative of how common the case is, not as a guarantee about any other store.
+
+Two related gaps are worth recording. The `version !== 3` refusal in `packages/session/session-format-v0-to-v1/src/validation.ts` has no test that exercises a v2 descriptor, and it compares against a literal `3` rather than importing `SUBAGENT_DESCRIPTOR_VERSION`, so the two can drift apart. Both are upstream concerns rather than rebranding changes.
 
 Closing this gap needs a descriptor-version upgrader that understands the v2 field set, which is upstream work rather than a rebranding change. Using a separate data home keeps the limitation contained: the original installation retains full access to every session.
 
