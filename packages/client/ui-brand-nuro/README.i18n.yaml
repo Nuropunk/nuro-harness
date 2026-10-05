@@ -1,0 +1,43 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/client/ui-brand-nuro/README.md
+/:
+  en: bfd0855dc3949388
+  zh: 7364a5307b1c747e
+/deepseek-ai-dsh-client-ui-brand-nuro:
+  en: 01e7ee648c1af488
+  zh: 707c06f49d2be4d1
+/deepseek-ai-dsh-client-ui-brand-nuro/summary:
+  en: d09a1fb9ce3bb914
+  zh: fe664596b562c6b4
+/deepseek-ai-dsh-client-ui-brand-nuro/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 09388d293f9be9cb
+/deepseek-ai-dsh-client-ui-brand-nuro/use-this-package:
+  en: 1f9b58959c953729
+  zh: 6097ac87c24f2116
+/deepseek-ai-dsh-client-ui-brand-nuro/use-this-package/choosing-the-profile:
+  en: 9c6992ae14cd2280
+  zh: a433d565422fff28
+/deepseek-ai-dsh-client-ui-brand-nuro/use-this-package/replacing-the-brand:
+  en: 90b70a11e2d35ef6
+  zh: c01ecb8d9a45bf0c
+/deepseek-ai-dsh-client-ui-brand-nuro/understand-the-implementation:
+  en: 89f6d06ee42ca1ed
+  zh: 42caee707c47b0d2
+/deepseek-ai-dsh-client-ui-brand-nuro/further-exploration:
+  en: 359eca8172533c87
+  zh: 38ea6a9141b8a200
+/deepseek-ai-dsh-client-ui-brand-nuro/model-experience:
+  en: 618008c7641070e7
+  zh: b2a846f626138103
+/deepseek-ai-dsh-client-ui-brand-nuro/model-experience/kv-cache-effect:
+  en: ca75c51c89c2c9b0
+  zh: 6c9e01d76d7ff3c7
+/deepseek-ai-dsh-client-ui-brand-nuro/known-limitations-and-deferred-work:
+  en: e3724594926e9ae0
+  zh: 8c293cfc66812642
+/deepseek-ai-dsh-client-ui-brand-nuro/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: cdd2a143b725accd
