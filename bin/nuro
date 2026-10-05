@@ -38,12 +38,20 @@ run_dsh() {
   exec node --import tsx/esm apps/cli/src/bin.ts "$@"
 }
 
+# Launch Electron as a GUI application. A parent dsh process exports
+# ELECTRON_RUN_AS_NODE=1 to the agents it runs, and an inherited value makes
+# Electron start as plain Node, rejecting every Chromium switch and never
+# opening a window. The desktop modes must clear it.
+run_electron() {
+  exec env -u ELECTRON_RUN_AS_NODE "$@"
+}
+
 case "$mode" in
   desktop)
-    exec pnpm --filter @deepseek-ai/dsh-desktop run start -- "$@"
+    run_electron pnpm --filter @deepseek-ai/dsh-desktop run start -- "$@"
     ;;
   dev-desktop)
-    exec pnpm --filter @deepseek-ai/dsh-desktop run dev -- "$@"
+    run_electron pnpm --filter @deepseek-ai/dsh-desktop run dev -- "$@"
     ;;
   web)
     # Address the profile directly: the `web` subcommand is shorthand for
